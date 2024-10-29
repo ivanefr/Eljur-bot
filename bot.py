@@ -35,6 +35,8 @@ async def send_new_marks(user_id, login, password, time):
                 for (mark, (num, month)) in marks:
                     text += f"*{mark}* за {num:02}\.{month:02}\n"
                 await bot.send_message(user_id, text, parse_mode="MarkdownV2")
+        else:
+            await bot.send_message(user_id, "Новых оценок пока нет")
         await asyncio.sleep(time)
 
 
@@ -89,6 +91,7 @@ async def get_login(message: types.Message, state: FSMContext, login):
 async def get_password(message: types.Message, state: FSMContext, password):
     data = await state.get_data()
     login = data["login"]
+    await message.answer("Идёт проверка данных...")
     if is_valid(login, password):
         db.add_user(message.chat.id, login, password)
         time = db.get_time(message.chat.id)
