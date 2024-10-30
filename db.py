@@ -7,9 +7,7 @@ db_sess = db_session.create_session()
 
 
 def add_user(user_id, login, password):
-    data = db_sess.query(Users).filter(Users.user_id == user_id).first()
-    if data:
-        db_sess.delete(data)
+    delete_user(user_id)
     user = Users()
     user.user_id = user_id
     user.login = login
@@ -28,6 +26,18 @@ def set_time(user_id, time):
         d = json.load(f)
     d[str(user_id)] = time
     with open("database/time.json", "w") as f:
+        json.dump(d, f)
+
+
+def delete_user(user_id):
+    data = db_sess.query(Users).filter(Users.user_id == user_id).first()
+    if data:
+        db_sess.delete(data)
+    with open("database/time.json", 'r') as f:
+        d = json.load(f)
+    if str(user_id) in d:
+        del d[str(user_id)]
+    with open("database/time.json", 'w') as f:
         json.dump(d, f)
 
 

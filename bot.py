@@ -26,6 +26,14 @@ class TimeStates(StatesGroup):
 
 async def send_new_marks(user_id, login, password, time):
     while True:
+        if not is_valid(login, password):
+            await bot.send_message(user_id, "Данные логин и пароль недействительны. "
+                                            "Проверка новых оценок остановлена. "
+                                            "Чтобы еще раз авторизоваться введите команду /login")
+            db.delete_user(user_id)
+            tasks[user_id].cancel()
+            del tasks[user_id]
+            break
         new_marks = get_new_marks(user_id, login, password)
         if new_marks:
             await bot.send_message(user_id, "❗️Появились новые оценки❗️")
@@ -49,7 +57,7 @@ async def time_command(message: types.Message, state: FSMContext):
 
 @dp.message(F.text.as_("time"), TimeStates.time)
 async def get_time(message: types.Message, state: FSMContext, time: str):
-    if time.isdecimal() and int(time) >= 5:
+    if time.isdecimal() and 5 <= int(time) <= 1440:
         db.set_time(message.chat.id, int(time) * 60)
         await message.answer(f"Интервал успешно изменён на {time} минут✅")
         if message.chat.id in tasks:
@@ -116,4 +124,3 @@ def start_bot():
 async def main():
     start_bot()
     await dp.start_polling(bot)
-    print('lalaal')

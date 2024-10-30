@@ -8,7 +8,7 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
 
 options = Options()
-# options.add_argument("--headless=new")
+options.add_argument("--headless=new")
 driver = webdriver.Chrome(options=options)
 
 login_url = "https://licey33ivanovo.eljur.ru/authorize"
@@ -16,19 +16,25 @@ good_url = "https://licey33ivanovo.eljur.ru/journal-app"
 good_url2 = "https://licey33ivanovo.eljur.ru/journal-student-grades-action"
 
 
-def is_valid(login, password):
+def enter(login, password):
+    driver.delete_all_cookies()
     driver.get(login_url)
     login_input = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.XPATH, "//input[@type='text']"))
+        EC.presence_of_element_located((By.XPATH, "//input[@type=\"text\"]"))
     )
-    # login_input = driver.find_element(By.XPATH, "//input[@type=\"text\"]")
-    password_input = driver.find_element(By.XPATH, "//input[@type=\"password\"]")
+    password_input = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.XPATH, "//input[@type=\"password\"]"))
+    )
     login_input.send_keys(login)
     password_input.send_keys(password)
-    btn = driver.find_element(By.XPATH, "//button[@type='submit']")
+    btn = driver.find_element(By.XPATH, "//button[@type=\"submit\"]")
     btn.click()
+
+
+def is_valid(login, password):
+    enter(login, password)
     try:
-        WebDriverWait(driver, 0.5).until(
+        WebDriverWait(driver, 2).until(
             EC.presence_of_element_located((By.CLASS_NAME, 'notice__content'))
         )
         return False
@@ -37,15 +43,7 @@ def is_valid(login, password):
 
 
 def get_new_marks(user_id, login, password):
-    driver.get(login_url)
-    login_input = WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.XPATH, "//input[@type='text']"))
-    )
-    password_input = driver.find_element(By.XPATH, "//input[@type=\"password\"]")
-    login_input.send_keys(login)
-    password_input.send_keys(password)
-    btn = driver.find_element(By.XPATH, "//button[@type='submit']")
-    btn.click()
+    enter(login, password)
     WebDriverWait(driver, 10).until(
         EC.url_contains(good_url)
     )
