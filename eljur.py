@@ -1,11 +1,11 @@
-import time
-
+import json
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
+from bs4 import BeautifulSoup
+import datetime
 
 options = Options()
 options.add_argument("--headless=new")
@@ -33,17 +33,15 @@ def enter(login, password):
 
 def is_valid(login, password):
     enter(login, password)
-    try:
-        WebDriverWait(driver, 2).until(
-            EC.presence_of_element_located((By.CLASS_NAME, 'notice__content'))
-        )
+    WebDriverWait(driver, 3).until_not(
+        EC.presence_of_element_located((By.CLASS_NAME, 'page-loading'))
+    )
+    if driver.current_url == login_url:
         return False
-    except TimeoutException:
-        return True
+    return True
 
 
-def get_new_marks(user_id, login, password):
-    enter(login, password)
+def get_new_marks(user_id):
     WebDriverWait(driver, 10).until(
         EC.url_contains(good_url)
     )
@@ -52,4 +50,39 @@ def get_new_marks(user_id, login, password):
     WebDriverWait(driver, 10).until(
         EC.url_contains(good_url2)
     )
-    return {}
+    html = driver.page_source
+    soup = BeautifulSoup(html, "html.parser")
+    subjects = []
+    all_subjects = soup.find_all("div", class_="text-overflow")
+    for subject in all_subjects:
+        subjects.append(subject.text.replace('.', ''))
+    marks = {i: [] for i in subjects}
+    for subject in subjects:
+        subject_mark_cells = soup.find_all(name="div", attrs={"class": "cell",
+                                                              "name": subject,
+                                                              "mark_date": True})
+        for subject_mark_cell in subject_mark_cells:
+            mark = subject_mark_cell.find_next("div").text
+            if mark == '\xa0':
+                break
+            if mark == 'Н':
+                continue
+            date = subject_mark_cell['mark_date']
+            date = datetime.datetime.strptime(date, "%Y-%m-%d")
+            month = date.month
+            day = date.day
+            marks[subject].append([mark, (day, month)])
+    with open("database/marks.json", "r", encoding="utf-8") as file:
+        marks_file = json.load(file)
+    res = {}
+    if str(user_id) in marks_file:
+        for subject in marks:
+            for (mark, (day, month)) in marks[subject]:
+                if [mark, [day, month]] not in marks_file[str(user_id)][subject]:
+                    if subject not in res:
+                        res[subject] = []
+                    res[subject].append((mark, (day, month)))
+    marks_file[str(user_id)] = marks
+    with open("database/marks.json", "w", encoding="utf-8") as file:
+        json.dump(marks_file, file, ensure_ascii=False)
+    return res

@@ -33,12 +33,7 @@ def delete_user(user_id):
     data = db_sess.query(Users).filter(Users.user_id == user_id).first()
     if data:
         db_sess.delete(data)
-    with open("database/time.json", 'r') as f:
-        d = json.load(f)
-    if str(user_id) in d:
-        del d[str(user_id)]
-    with open("database/time.json", 'w') as f:
-        json.dump(d, f)
+    db_sess.commit()
 
 
 def get_time(user_id):
