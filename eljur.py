@@ -6,6 +6,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 from bs4 import BeautifulSoup
 import datetime
+from pprint import pformat
 
 options = Options()
 options.add_argument("--headless=new")
@@ -71,7 +72,7 @@ def get_new_marks(user_id):
             date = datetime.datetime.strptime(date, "%Y-%m-%d")
             month = date.month
             day = date.day
-            marks[subject].append([mark, (day, month)])
+            marks[subject].append([mark, [day, month]])
     with open("database/marks.json", "r", encoding="utf-8") as file:
         marks_file = json.load(file)
     res = {}
@@ -83,6 +84,36 @@ def get_new_marks(user_id):
                         res[subject] = []
                     res[subject].append((mark, (day, month)))
     marks_file[str(user_id)] = marks
+    marks_string = pformat(marks_file).replace("\'", "\"")
     with open("database/marks.json", "w", encoding="utf-8") as file:
-        json.dump(marks_file, file, ensure_ascii=False)
+        file.write(marks_string)
     return res
+
+
+def get_subjects(user_id):
+    with open("database/marks.json", "r", encoding="utf-8") as file:
+        d = json.load(file)
+    res = []
+    for subject in d[str(user_id)]:
+        res.append(subject)
+    return res
+
+
+def get_marks(user_id, subject):
+    with open("database/marks.json", "r", encoding="utf-8") as file:
+        d = json.load(file)
+    str_marks = []
+    int_marks = []
+    for (mark, (day, month)) in d[str(user_id)][subject]:
+        str_marks.append(mark)
+        if mark.isdecimal():
+            int_marks.append(int(mark))
+        elif len(mark) == 2:
+            int_marks.append(int(mark[:1]))
+        else:
+            for m in mark.split('/'):
+                if m.isdecimal():
+                    int_marks.append(int(m))
+                elif len(m) == 2:
+                    int_marks.append(int(m[:1]))
+    return str_marks, int_marks
