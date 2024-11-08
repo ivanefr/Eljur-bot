@@ -56,7 +56,7 @@ def get_new_marks(user_id):
     subjects = []
     all_subjects = soup.find_all("div", class_="text-overflow")
     for subject in all_subjects:
-        subjects.append(subject.text.replace('.', ''))
+        subjects.append(subject.text)
     marks = {i: [] for i in subjects}
     for subject in subjects:
         subject_mark_cells = soup.find_all(name="div", attrs={"class": "cell",
@@ -117,3 +117,17 @@ def get_marks(user_id, subject):
                 elif len(m) == 2:
                     int_marks.append(int(m[:1]))
     return str_marks, int_marks
+
+
+def get_statistics(user_id):
+    subjects = get_subjects(user_id)
+    res = []
+    for subject in subjects:
+        str_marks, int_marks = get_marks(user_id, subject)
+        if len(int_marks) == 0:
+            res.append([subject, 0.0])
+        else:
+            average = round(sum(int_marks) / len(int_marks), 2)
+            res.append([subject, average])
+    res.sort(key=lambda x: -x[1])
+    return res
